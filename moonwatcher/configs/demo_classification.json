@@ -1,0 +1,17 @@
+{
+    "metadata_keys": ["brightness", "contrast", "saturation"],
+    "slicing_conditions": [
+        {"type": "percentile", "key": "brightness", "operator": ">", "value": 80},
+        {"type": "percentile", "key": "brightness", "operator": "<", "value": 20},
+        {"type": "percentile", "key": "contrast", "operator": ">", "value": 80},
+        {"type": "percentile", "key": "contrast", "operator": "<", "value": 20},
+        {"type": "percentile", "key": "saturation", "operator": ">", "value": 80},
+        {"type": "percentile", "key": "saturation", "operator": "<", "value": 20}
+    ],
+    "checks": [
+        {"type": "test", "name": "AccuracyCheck", "metric": "Accuracy", "operator": ">", "value": 0.2},
+        {"type": "test", "name": "F1Check", "metric": "F1_Score", "operator": ">", "value": 0.2},
+        {"type": "test", "name": "Recall", "metric": "Recall", "operator": ">", "value": 0.2},
+        {"type": "test", "name": "Precision", "metric": "Precision", "operator": ">", "value": 0.2}
+    ]
+}

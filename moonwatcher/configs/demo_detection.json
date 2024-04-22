@@ -1,0 +1,48 @@
+{
+    "metadata_keys": ["brightness", "contrast", "saturation"],
+    "slicing_conditions": [
+        {"type": "percentile", "key": "brightness", "operator": ">", "value": 90},
+        {"type": "percentile", "key": "brightness", "operator": "<", "value": 10},
+        {"type": "percentile", "key": "contrast", "operator": ">", "value": 90},
+        {"type": "percentile", "key": "contrast", "operator": "<", "value": 10},
+        {"type": "percentile", "key": "saturation", "operator": ">", "value": 90},
+        {"type": "percentile", "key": "saturation", "operator": "<", "value": 10}
+    ],
+    "checks": [
+        {
+            "type": "test",
+            "name": "iouCheck",
+            "metric": "IntersectionOverUnion",
+            "operator": ">",
+            "value": 0.2
+        },
+        {
+            "type": "test",
+            "name": "mapCheck",
+            "metric": "mAP",
+            "operator": ">",
+            "value": 0.2
+        },
+        {
+            "type": "test",
+            "name": "mapCheck_small_objects",
+            "metric": "mAP_small",
+            "operator": ">",
+            "value": 0.2
+        },
+        {
+            "type": "test",
+            "name": "mapCheck_medium_objects",
+            "metric": "mAP_medium",
+            "operator": ">",
+            "value": 0.2
+        },
+        {
+            "type": "test",
+            "name": "mapCheck_large_objects",
+            "metric": "mAP_large",
+            "operator": ">",
+            "value": 0.2
+        }
+    ]
+}
