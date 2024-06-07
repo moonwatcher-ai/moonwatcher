@@ -385,7 +385,9 @@ def automated_checking(
         )
         check_objects.append(new_check)
 
-    entire_dataset_check_suite = CheckSuite(name=f"Test_{mw_dataset.name}", checks=check_objects)
+    entire_dataset_check_suite = CheckSuite(
+        name=f"Test_{mw_dataset.name}", checks=check_objects
+    )
     entire_dataset_test_results = entire_dataset_check_suite(model=mw_model, show=True)
     all_test_results[mw_dataset.name] = entire_dataset_test_results
 

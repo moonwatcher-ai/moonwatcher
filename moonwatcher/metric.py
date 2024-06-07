@@ -154,7 +154,17 @@ def calculate_metric_internal(
             metric_value = metric_function.compute()
 
             if metric_class:
-                metric_value = metric_value.get(metric_class, 0.0)
+                if metric in ["mAP", "mAP_small", "mAP_medium", "mAP_large"]:
+                    index = torch.where(metric_value["classes"] == metric_class)[0]
+                    metric_value = (
+                        metric_value["map_per_class"][index].item()
+                        if index.numel() > 0
+                        else 0.0
+                    )
+                    metric_value = 0.0 if metric_value < 0.0 else metric_value
+                else:
+                    metric_class = "iou/cl_" + str(metric_class)
+                    metric_value = metric_value.get(metric_class, 0.0)
             else:
                 metric_value = metric_value[_METRIC_KEYS[metric]]
 
