@@ -22,6 +22,7 @@ class Check(MoonwatcherObject):
         dataset_or_slice: Union[MoonwatcherDataset, Slice],
         metric: str,
         metric_parameters: Optional[Dict] = None,
+        metric_class: str = None,
         description: Optional[str] = None,
         metadata: Dict[str, Any] = None,
         operator: Optional[str] = None,
@@ -51,6 +52,7 @@ class Check(MoonwatcherObject):
         self.dataset_or_slice = dataset_or_slice
         self.metric = metric
         self.metric_parameters = metric_parameters
+        self.metric_class = metric_class
         self.store()
 
     def _upload(self):
@@ -90,6 +92,7 @@ class Check(MoonwatcherObject):
             dataset_or_slice=self.dataset_or_slice,
             metric=self.metric,
             metric_parameters=self.metric_parameters,
+            metric_class=self.metric_class,
         )
         report = {
             "check_name": self.name,
@@ -357,6 +360,7 @@ def automated_checking(
                 name=check_name,
                 dataset_or_slice=mw_slice,
                 metric=check["metric"],
+                metric_class=check.get("metric_class", None),
                 operator=check.get("operator", None),
                 value=check.get("value", None),
             )
@@ -375,6 +379,7 @@ def automated_checking(
             name=check_name,
             dataset_or_slice=mw_dataset,
             metric=check["metric"],
+            metric_class=check.get("metric_class", None),
             operator=check.get("operator", None),
             value=check.get("value", None),
         )

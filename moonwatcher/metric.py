@@ -55,6 +55,7 @@ def calculate_metric_internal(
     predictions_loaded,
     metric: str,
     metric_parameters=None,
+    metric_class=None,
 ):
     if metric_parameters is None:
         metric_parameters = {}
@@ -142,14 +143,19 @@ def calculate_metric_internal(
                 if "boxes" not in pred or len(pred["boxes"]) == 0:
                     raise ValueError(f"Prediction boxes are empty for an entry: {pred}")
 
+            if metric_class:
+                metric_parameters["class_metrics"] = True
+
             if metric in ["mAP", "mAP_small", "mAP_medium", "mAP_large"]:
                 metric_parameters["iou_type"] = "bbox"
-                metric_function = metric_function(**metric_parameters)
-                metric_function.update(predictions, groundtruths)
-                metric_value = metric_function.compute()
-                metric_value = metric_value[_METRIC_KEYS[metric]]
+
+            metric_function = metric_function(**metric_parameters)
+            metric_function.update(predictions, groundtruths)
+            metric_value = metric_function.compute()
+
+            if metric_class:
+                metric_value = metric_value.get(metric_class, 0.0)
             else:
-                metric_value = metric_function(predictions, groundtruths)
                 metric_value = metric_value[_METRIC_KEYS[metric]]
 
         except Exception as e:
@@ -157,7 +163,10 @@ def calculate_metric_internal(
                 f"Error occured during metric computation. Check if dataset output_transform and model output_transform return the required format: {e}"
             )
 
-    return round(metric_value.item(), 5)
+    if hasattr(metric_value, "item"):
+        metric_value = metric_value.item()
+
+    return round(metric_value, 5)
 
 
 def calculate_metric(
@@ -165,6 +174,7 @@ def calculate_metric(
     dataset_or_slice: Union[MoonwatcherDataset, Slice],
     metric: str,
     metric_parameters=None,
+    metric_class=None,
 ):
     relevant_ids, dataset, groundtruths_loaded, predictions_loaded = load_data(
         model, dataset_or_slice
@@ -177,6 +187,7 @@ def calculate_metric(
         predictions_loaded,
         metric,
         metric_parameters,
+        metric_class,
     )
 
 
@@ -190,10 +201,10 @@ _METRIC_FUNCTIONS = {
     "mAP_small": torchmetrics.detection.MeanAveragePrecision,
     "mAP_medium": torchmetrics.detection.MeanAveragePrecision,
     "mAP_large": torchmetrics.detection.MeanAveragePrecision,
-    "CompleteIntersectionOverUnion": torchmetrics.detection.CompleteIntersectionOverUnion(),
-    "DistanceIntersectionOverUnion": torchmetrics.detection.DistanceIntersectionOverUnion(),
-    "GeneralizedIntersectionOverUnion": torchmetrics.detection.GeneralizedIntersectionOverUnion(),
-    "IntersectionOverUnion": torchmetrics.detection.IntersectionOverUnion(),
+    "CompleteIntersectionOverUnion": torchmetrics.detection.CompleteIntersectionOverUnion,
+    "DistanceIntersectionOverUnion": torchmetrics.detection.DistanceIntersectionOverUnion,
+    "GeneralizedIntersectionOverUnion": torchmetrics.detection.GeneralizedIntersectionOverUnion,
+    "IntersectionOverUnion": torchmetrics.detection.IntersectionOverUnion,
 }
 
 
