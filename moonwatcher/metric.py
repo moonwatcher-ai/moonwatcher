@@ -51,6 +51,7 @@ def calculate_metric_internal(
     model,
     relevant_ids,
     dataset,
+    name_to_label,
     groundtruths_loaded,
     predictions_loaded,
     metric: str,
@@ -105,6 +106,13 @@ def calculate_metric_internal(
 
             if "average" not in metric_parameters:
                 metric_parameters["average"] = "macro"
+            if metric_class is not None:
+                metric_parameters["average"] = "none"
+                if isinstance(metric_class, str):
+                    if metric_class not in name_to_label:
+                        raise ValueError(f"Class name '{metric_class}' not found in label_to_name dictionary.")
+                    metric_class = name_to_label[metric_class]
+                metric_class = label_encoder.transform([metric_class])[0]
 
             metric_value = metric_function(
                 predictions,
@@ -113,6 +121,9 @@ def calculate_metric_internal(
                 num_classes=num_classes,
                 **metric_parameters,
             )
+
+            if metric_class is not None:
+                metric_value = metric_value[metric_class]
 
         except Exception as e:
             raise Exception(
@@ -143,7 +154,7 @@ def calculate_metric_internal(
                 if "boxes" not in pred or len(pred["boxes"]) == 0:
                     raise ValueError(f"Prediction boxes are empty for an entry: {pred}")
 
-            if metric_class:
+            if metric_class is not None:
                 metric_parameters["class_metrics"] = True
 
             if metric in ["mAP", "mAP_small", "mAP_medium", "mAP_large"]:
@@ -153,7 +164,12 @@ def calculate_metric_internal(
             metric_function.update(predictions, groundtruths)
             metric_value = metric_function.compute()
 
-            if metric_class:
+            if metric_class is not None:
+                if isinstance(metric_class, str):
+                    if metric_class not in name_to_label:
+                        raise ValueError(f"Class name '{metric_class}' not found in label_to_name dictionary.")
+                    metric_class = name_to_label[metric_class]
+
                 if metric in ["mAP", "mAP_small", "mAP_medium", "mAP_large"]:
                     index = torch.where(metric_value["classes"] == metric_class)[0]
                     metric_value = (
@@ -189,10 +205,18 @@ def calculate_metric(
     relevant_ids, dataset, groundtruths_loaded, predictions_loaded = load_data(
         model, dataset_or_slice
     )
+
+    if isinstance(dataset_or_slice, Slice):
+        label_to_name = dataset_or_slice.moonwatcher_dataset.label_to_name
+    else:
+        label_to_name = dataset_or_slice.label_to_name
+    name_to_label = {v: k for k, v in label_to_name.items()}
+
     return calculate_metric_internal(
         model,
         relevant_ids,
         dataset,
+        name_to_label,
         groundtruths_loaded,
         predictions_loaded,
         metric,
