@@ -2,10 +2,9 @@ import json
 from pathlib import Path
 from typing import Optional, List, Union, Dict, Any
 
-import numpy as np
-
 from moonwatcher.utils.data import OPERATOR_DICT
 from moonwatcher.dataset.dataset import MoonwatcherDataset, Slice
+from moonwatcher.dataset.metadata import ATTRIBUTE_FUNCTIONS
 from moonwatcher.model.model import MoonwatcherModel
 from moonwatcher.metric import calculate_metric
 from moonwatcher.utils.helpers import get_current_timestamp
@@ -323,7 +322,10 @@ def automated_checking(
 
     # Add Metadata
     for metadata_key in metadata_keys:
-        mw_dataset.add_predefined_metadata(metadata_key)
+        if metadata_key in ATTRIBUTE_FUNCTIONS:
+            mw_dataset.add_predefined_metadata(metadata_key)
+        else:
+            mw_dataset.add_metadata_from_groundtruths(metadata_key)
     if metadata_list:
         mw_dataset.add_metadata_from_list(metadata_list)
 

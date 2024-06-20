@@ -86,9 +86,7 @@ def calculate_metric_internal(
             )
 
         if not groundtruths.size or not predictions.size:
-            raise ValueError(
-                "Ground truths and/or predictions are empty! Ensure your dataset or slice contains data and has been properly processed."
-            )
+            return -1.0
 
         try:
             num_classes = len(dataset.label_to_name)
@@ -143,9 +141,7 @@ def calculate_metric_internal(
             )
 
             if not groundtruths or not predictions:
-                raise ValueError(
-                    "Ground truths and/or predictions are empty! Ensure your dataset or slice contains data and has been properly processed."
-                )
+                return -1.0
 
             for gt in groundtruths:
                 if "boxes" not in gt or len(gt["boxes"]) == 0:

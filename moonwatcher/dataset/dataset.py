@@ -12,7 +12,7 @@ from moonwatcher.utils.data import OPERATOR_DICT
 from moonwatcher.utils.data import DataType, Task
 from moonwatcher.utils.api_connector import is_api_key_and_endpoint_available
 from moonwatcher.base.base import MoonwatcherObject
-from moonwatcher.dataset.metadata import _ATTRIBUTE_FUNCTIONS
+from moonwatcher.dataset.metadata import ATTRIBUTE_FUNCTIONS
 from moonwatcher.utils.api_connector import upload_if_possible
 from moonwatcher.annotations import GroundTruths, Labels, BoundingBoxes
 from moonwatcher.utils.helpers import get_current_timestamp, convert_to_list
@@ -46,7 +46,6 @@ class MoonwatcherDataset(MoonwatcherObject, Dataset):
         :param task: either classification or detection
         :param output_transform: necessary to transform dataset output into moonwatcher format, see demo files
         :param label_to_name: dictionary mapping label ids to name
-        :param dataset_transform:
         :param metadata: dictionary of tags for the dataset, can be ignored
         :param description: description of the dataset, can be ignored
         :param locators: necessary only for use with the webapp, urls for every image to display in webapp
@@ -216,7 +215,7 @@ class MoonwatcherDataset(MoonwatcherObject, Dataset):
             image = (image * 255).astype(np.uint8) if image.max() <= 1.0 else image
 
             if predefined_metadata_key not in self.datapoints[i].metadata:
-                metadata_value = _ATTRIBUTE_FUNCTIONS[predefined_metadata_key](image)
+                metadata_value = ATTRIBUTE_FUNCTIONS[predefined_metadata_key](image)
                 self.datapoints[i].add_metadata(
                     key=predefined_metadata_key, value=metadata_value
                 )
@@ -234,6 +233,38 @@ class MoonwatcherDataset(MoonwatcherObject, Dataset):
             if i < len(self.datapoints):
                 for key, value in metadata.items():
                     self.datapoints[i].add_metadata(key=key, value=value)
+        self.store(overwrite=True)
+
+    def add_metadata_from_groundtruths(self, class_name: str):
+        """
+        Add the number of occurrences of a specific class in each picture as metadata.
+
+        :param class_name: Name of the class to count occurrences for.
+        """
+        class_id = None
+        for key, value in self.label_to_name.items():
+            if value == class_name:
+                class_id = key
+                break
+
+        if class_id is None:
+            raise ValueError(
+                f"Class name '{class_name}' not found in label_to_name mapping."
+            )
+
+        for i, datapoint in enumerate(tqdm(self.datapoints, desc=f"Adding metadata")):
+            groundtruth = self.groundtruths.get(datapoint.number)
+
+            if self.task == Task.DETECTION.value:
+                if isinstance(groundtruth, BoundingBoxes):
+                    count = (groundtruth.labels == class_id).sum().item()
+                    datapoint.add_metadata(key=f"{class_name}", value=count)
+
+            elif self.task == Task.CLASSIFICATION.value:
+                if isinstance(groundtruth, Labels):
+                    count = (groundtruth.labels == class_id).sum().item()
+                    datapoint.add_metadata(key=f"{class_name}", value=count)
+
         self.store(overwrite=True)
 
     def add_metadata_custom(self, metadata_key: str, metadata_func: Callable):
@@ -531,6 +562,15 @@ class Slice(MoonwatcherDataset, MoonwatcherObject):
         """
         super().add_predefined_metadata(predefined_metadata_key)
         self.original_dataset.add_predefined_metadata(predefined_metadata_key)
+
+    def add_metadata_from_groundtruths(self, class_name: str):
+        """
+        Add the number of occurrences of a specific class in each picture as metadata.
+
+        :param class_name: Name of the class to count occurrences for.
+        """
+        super().add_metadata_from_groundtruths(class_name)
+        self.original_dataset.add_metadata_from_groundtruths(class_name)
 
     def add_metadata_custom(self, metadata_key: str, metadata_func: Callable):
         """
