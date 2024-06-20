@@ -22,7 +22,7 @@ def compute_resolution(image):
     return height * width
 
 
-_ATTRIBUTE_FUNCTIONS = {
+ATTRIBUTE_FUNCTIONS = {
     "brightness": compute_brightness,
     "contrast": compute_contrast,
     "saturation": compute_saturation,

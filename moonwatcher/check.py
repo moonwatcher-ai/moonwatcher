@@ -2,10 +2,9 @@ import json
 from pathlib import Path
 from typing import Optional, List, Union, Dict, Any
 
-import numpy as np
-
 from moonwatcher.utils.data import OPERATOR_DICT
 from moonwatcher.dataset.dataset import MoonwatcherDataset, Slice
+from moonwatcher.dataset.metadata import ATTRIBUTE_FUNCTIONS
 from moonwatcher.model.model import MoonwatcherModel
 from moonwatcher.metric import calculate_metric
 from moonwatcher.utils.helpers import get_current_timestamp
@@ -22,6 +21,7 @@ class Check(MoonwatcherObject):
         dataset_or_slice: Union[MoonwatcherDataset, Slice],
         metric: str,
         metric_parameters: Optional[Dict] = None,
+        metric_class: str = None,
         description: Optional[str] = None,
         metadata: Dict[str, Any] = None,
         operator: Optional[str] = None,
@@ -51,6 +51,7 @@ class Check(MoonwatcherObject):
         self.dataset_or_slice = dataset_or_slice
         self.metric = metric
         self.metric_parameters = metric_parameters
+        self.metric_class = metric_class
         self.store()
 
     def _upload(self):
@@ -90,6 +91,7 @@ class Check(MoonwatcherObject):
             dataset_or_slice=self.dataset_or_slice,
             metric=self.metric,
             metric_parameters=self.metric_parameters,
+            metric_class=self.metric_class,
         )
         report = {
             "check_name": self.name,
@@ -320,7 +322,10 @@ def automated_checking(
 
     # Add Metadata
     for metadata_key in metadata_keys:
-        mw_dataset.add_predefined_metadata(metadata_key)
+        if metadata_key in ATTRIBUTE_FUNCTIONS:
+            mw_dataset.add_predefined_metadata(metadata_key)
+        else:
+            mw_dataset.add_metadata_from_groundtruths(metadata_key)
     if metadata_list:
         mw_dataset.add_metadata_from_list(metadata_list)
 
@@ -357,6 +362,7 @@ def automated_checking(
                 name=check_name,
                 dataset_or_slice=mw_slice,
                 metric=check["metric"],
+                metric_class=check.get("metric_class", None),
                 operator=check.get("operator", None),
                 value=check.get("value", None),
             )
@@ -375,12 +381,15 @@ def automated_checking(
             name=check_name,
             dataset_or_slice=mw_dataset,
             metric=check["metric"],
+            metric_class=check.get("metric_class", None),
             operator=check.get("operator", None),
             value=check.get("value", None),
         )
         check_objects.append(new_check)
 
-    entire_dataset_check_suite = CheckSuite(name=f"Test_{mw_dataset.name}", checks=check_objects)
+    entire_dataset_check_suite = CheckSuite(
+        name=f"Test_{mw_dataset.name}", checks=check_objects
+    )
     entire_dataset_test_results = entire_dataset_check_suite(model=mw_model, show=True)
     all_test_results[mw_dataset.name] = entire_dataset_test_results
 

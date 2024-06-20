@@ -6,7 +6,7 @@ from moonwatcher.dataset.metadata import (
     compute_contrast,
     compute_saturation,
     compute_resolution,
-    _ATTRIBUTE_FUNCTIONS,
+    ATTRIBUTE_FUNCTIONS,
 )
 
 
@@ -44,7 +44,7 @@ def test_compute_resolution():
 
 def test_attribute_functions():
     image = np.ones((100, 100, 3), dtype=np.uint8) * 128
-    assert _ATTRIBUTE_FUNCTIONS["brightness"](image) == compute_brightness(image)
-    assert _ATTRIBUTE_FUNCTIONS["contrast"](image) == compute_contrast(image)
-    assert _ATTRIBUTE_FUNCTIONS["saturation"](image) == compute_saturation(image)
-    assert _ATTRIBUTE_FUNCTIONS["resolution"](image) == compute_resolution(image)
+    assert ATTRIBUTE_FUNCTIONS["brightness"](image) == compute_brightness(image)
+    assert ATTRIBUTE_FUNCTIONS["contrast"](image) == compute_contrast(image)
+    assert ATTRIBUTE_FUNCTIONS["saturation"](image) == compute_saturation(image)
+    assert ATTRIBUTE_FUNCTIONS["resolution"](image) == compute_resolution(image)
